@@ -20,7 +20,7 @@ mongo = PyMongo(app)
 @app.route("/")
 @app.route("/get_tasks")
 def get_tasks():
-    tasks = mongo.db.tasks.find()
+    tasks = list(mongo.db.tasks.find())
     return render_template("tasks.html", tasks=tasks)
 
 
@@ -164,7 +164,8 @@ def edit_category(category_id):
         submit = {
             "category_name": request.form.get("category_name")
         }
-        mongo.db.categories.update_one({"_id": ObjectId(category_id)}, {"$set": submit})
+        mongo.db.categories.update_one(
+            {"_id": ObjectId(category_id)}, {"$set": submit})
         flash("Category successfully edited")
         return redirect(url_for("get_categories"))
 
@@ -177,6 +178,13 @@ def delete_category(category_id):
     mongo.db.categories.delete_one({"_id": ObjectId(category_id)})
     flash("Category successfully deleted")
     return redirect(url_for("get_categories"))
+
+
+@app.route("/search", methods=["GET", "POST"])
+def search():
+    query = request.form.get("query")
+    tasks = list(mongo.db.tasks.find({"$text": {"$search": query}}))
+    return render_template("tasks.html", tasks=tasks)
 
 
 if __name__ == "__main__":
